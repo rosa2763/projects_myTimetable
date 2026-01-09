@@ -5,7 +5,7 @@ from tkinter import*
 from tkinter import ttk
 import tkinter as tk
 import pandas as pd
-from tt_show_class_nov10 import TimeTable
+from tt_show_class_dec import TimeTable
 
 def dic1_fun(key_col,val_col):
     keys = df1[key_col]

@@ -62,12 +62,16 @@ def odd_even_selection(event):
 def semester_option_selection(event):
     global df1,odd_even
     data_tt["class_semester"] = semester_code.get()
-    my_data_tt["my_sem"] = data_tt["class_semester"] 
-    #print(my_data_tt)
+    ltp_code.config(values=("Lecture","Tutorial","Practical","Projects"))
+def ltp_option_selection(event):
+    global class_x,df1,df3
+    global weekday_dict,slot1_dict,slot2_dict,slot3_dict,slot4_dict
+    global slot5_dict,slot6_dict
     df1 = pd.read_excel(f"curiculam_{data_tt['class_dept']}.xlsx",sheet_name=data_tt["class_semester"])
     df1["ID1"] = df1.index
     global code_dict,select_dict,class_count_dict
     global lec_dict,tut_dict,lab_dict,proj_dict
+    global class_x,code_ref_lst,lec_ref_lst
     code_dict = dic1_fun("ID1","Code")
     select_dict = dic1_fun("ID1","Select")
     class_count_dict = dic1_fun("ID1","Number")
@@ -75,59 +79,18 @@ def semester_option_selection(event):
     tut_dict = dic1_fun("ID1","T")
     lab_dict = dic1_fun("ID1","P")
     proj_dict = dic1_fun("ID1","R")
-    ltp_code.config(values=("Lecture","Tutorial","Practical","Projects"))
-def ltp_option_selection(event):
-    global class_x,class_count_list 
-    class_x=ltp_code.get()
-    data_tt["class_type"] = class_x
-    print(class_x)
-    global df1,code_dict,select_dict,class_count_dict,new_ltp
-    global lec_dict,tut_dict,lab_dict,proj_dict,ref_list,new_ref
-    code_dict = dic1_fun("ID1","Code")
-    code_list = list(code_dict.values())
-    select_list = list(select_dict.values())
-    class_count_list = list(class_count_dict.values())
-    match class_x:
-        case "Lecture":
-            ref_list = list(lec_dict.values())
-        case "Tutorial":
-            ref_list = list(tut_dict.values())
-        case "Practical":
-            ref_list = list(lab_dict.values())
-        case "Projects":
-            ref_list = list(proj_dict.values())
-        case _:
-            print("Who")       
-    #print(ref_list)
-    print(code_dict)
-    code_list = list(code_dict.values())
-    keys_list = list(select_dict.keys())
-    for i in range(len(ref_list)):
-        if select_list[i] == 0:
-            del code_list[keys_list[i]]
-            del ref_list[keys_list[i]]
-    print(code_list)
-    #print(ref_list)
-    new_ltp = []
-    new_ref = []
-    for i in range(len(ref_list)):
-        if ref_list[i] != 0:
-            new_ref.append(ref_list[i])
-            new_ltp.append(code_list[i])
-    print(new_ltp)
-    print(new_ref)
-    """
-    sub_code.set('')                #-------------------------
-    sub_code.config(values=new_ltp) #-------------------------
-    #print(new_ltp)
-    """
-    tt_val_sub_code_update()
-def tt_val_sub_code_update():
-    global df3,in_tt,my_data_tt,new_ltp,code_dict,class_count_list 
-    global weekday_dict,slot1_dict,slot2_dict,slot3_dict,slot4_dict
-    global slot5_dict,slot6_dict,class_x,new_ref
-    #print(f"timeTable_{my_data_tt['my_class']}.xlsx")
-    #print(my_data_tt["my_sem"])
+    select_lst = []
+    for i in range(len(select_dict)):
+        if select_dict[i] != 0:
+            select_lst.append(select_dict[i])
+        else:
+            del code_dict[i]
+            del lec_dict[i]
+            del tut_dict[i]
+            del lab_dict[i]
+            del proj_dict[i]
+            del class_count_dict[i]
+# Read the selected subject codes from the time table to avoid duplicate entry
     df3 = pd.read_excel(f"timeTable_{my_data_tt['my_class']}.xlsx",sheet_name=my_data_tt["my_sem"])
     df3["ID3"] = df3.index
     weekday_dict = dic3_fun("ID3","week_day")
@@ -137,46 +100,83 @@ def tt_val_sub_code_update():
     slot4_dict = dic3_fun("ID3","slot_4")
     slot5_dict = dic3_fun("ID3","slot_5")
     slot6_dict = dic3_fun("ID3","slot_6")
-    #print(slot1_dict)   
+
+    class_x=ltp_code.get()
+    print(class_x)
+    code_lst = list(code_dict.values())
+    code_ref_lst = []
+    class_count_lst = list(class_count_dict.values())
+    class_count_ref_lst = []
     match class_x:
-        case "Lecture":        
-            modified_ltp = []
-            x = len(new_ref)
+        case "Lecture":
+            lec_lst = list(lec_dict.values())           
+            lec_ref_lst = []
+            for i in range(len(lec_lst)):
+                if lec_lst[i] != 0:
+                    lec_ref_lst.append(lec_lst[i])
+                    code_ref_lst.append(code_lst[i])
+        # avoid duplicate entry in Lecture
+            code_lst = []
+            x = len(lec_ref_lst)
             for j in range(x):
-                L_count = new_ref[j]
-                #print(new_ltp[j])
-                L_consumed = check_tt_space(new_ltp[j])
-                print(L_count,L_consumed)
-                print(len(new_ref),j)
+                L_count = lec_ref_lst[j]
+                L_consumed = check_tt_space(code_ref_lst[j])
                 if (L_count-L_consumed) > 0:
-                    modified_ltp.append(new_ltp[j])
-                    #modified_ltp.remove(new_ltp[j])
-                print(modified_ltp)
+                    code_lst.append(code_ref_lst[j])
         case "Tutorial":
-            modified_ltp = []
-            tut_val = 0
-            for i in range(len(new_ltp)):
-                temp_val = find_key(code_dict,new_ltp[i])
-                if class_count_list[temp_val] <= 26:
+            tut_lst = list(tut_dict.values())
+            for i in range(len(tut_lst)):
+                if tut_lst[i] != 0:
+                    class_count_ref_lst.append(class_count_lst[i])
+                    code_ref_lst.append(code_lst[i])
+        # avoid duplicate entry in tutorial
+            code_lst = []
+            T_count = 0
+            x = len(class_count_ref_lst)
+            for j in range(x):
+                if class_count_ref_lst[j] <= 26:
                     T_count = 1
-                elif class_count_list[temp_val] <= 48:
+                elif class_count_ref_lst[j] <= 48:
                     T_count = 2
                 else:
                     T_count = 3
-            for j in range(len(new_ltp)):
-                T_consumed = check_tt_space(new_ltp[j])
-                print(T_count,T_consumed)
+                T_consumed = check_tt_space(code_ref_lst[j])
                 if (T_count-T_consumed) > 0:
-                    modified_ltp.append(new_ltp[j])
-            print(modified_ltp)
+                    code_lst.append(code_ref_lst[j])
         case "Practical":
-            modified_ltp = new_ltp
+            lab_lst = list(lab_dict.values())           
+            for i in range(len(lab_lst)):
+                if lab_lst[i] != 0:
+                    class_count_ref_lst.append(class_count_lst[i])
+                    code_ref_lst.append(code_lst[i])
+        # avoid duplicate entry in Practical
+            code_lst = []
+            P_count = 0
+            x = len(class_count_ref_lst)
+            for j in range(x):
+                if class_count_ref_lst[j] <= 18:
+                    P_count = 1
+                elif class_count_ref_lst[j] <= 36:
+                    P_count = 2
+                elif class_count_ref_lst[j] <= 54:
+                    P_count = 3
+                else:
+                    P_count = 4
+                P_consumed = check_tt_space(code_ref_lst[j])
+                if (P_count-P_consumed) > 0:
+                    code_lst.append(code_ref_lst[j])
         case "Projects":
-            modified_ltp = new_ltp
+            proj_lst = list(proj_dict.values())           
+            proj_ref_lst = []
+            for i in range(len(proj_lst)):
+                if proj_lst[i] != 0:
+                    proj_ref_lst.append(proj_lst[i])
+                    code_ref_lst.append(code_lst[i])
+            code_lst = code_ref_lst
         case _:
-            print("Who1")
+            print("Who")
     sub_code.set('')
-    sub_code.config(values=modified_ltp)  
+    sub_code.config(values=code_lst)
 
 def check_tt_space(check_tt_list):
     global slot1_dict,slot2_dict,slot3_dict,slot4_dict
@@ -215,28 +215,32 @@ def sub_option_selection(event):
 def action_option_selection(event):
     global class_x
     action_entry=action_code.get()
-    print(data_tt)
+    #print(data_tt)
     if action_entry == "CLEAR":
         lf1_lf2_clear()
         pass
     elif action_entry == "PROCEED":
-        if class_x == "Practical":
-            cb1.config(state='disabled')
-            cb2.config(state='disabled')
-        else:
-            cb1.config(state='normal')
-            cb2.config(state='normal')
-        cb3.config(state='normal')
-        cb4.config(state='normal')
-        cb5.config(state='normal')
-        cb6.config(state='normal')
+        tt_slot_entry(class_x,data_tt["sub_code"])
         TimeTable(root)
     else:
         pass
+def tt_slot_entry(class_type,sub_selected):
+    match class_type:
+        case "Lecture":
+            cb1.config(state='normal')
+            cb2.config(state='normal')
+            cb3.config(state='normal')
+            cb4.config(state='normal')
+            cb5.config(state='normal')
+            cb6.config(state='normal')
+            key_lec = find_key(code_dict,sub_selected)
+            hr_count = lec_dict[key_lec]
+            print(class_type,sub_selected,hr_count) 
+
+    pass
 def cancel_option_selection(event):
     lf1_lf2_clear()
     pass
-
 def lf1_lf2_clear():
     emp_code.set('')
     emp_code['values']=()
@@ -319,7 +323,7 @@ ref_s_WIDTH = 1920
 ref_s_HEIGHT = 1080
 s_width = int(dev_WIDTH*w_width/ref_s_WIDTH)
 s_height = int(dev_HEIGHT*w_height/ref_s_HEIGHT)
-print(s_width,s_height)
+#print(s_width,s_height)
 root.geometry("700x550")
 root.iconbitmap('Logo.ico')
 root.columnconfigure(0,weight=1) #weight= 1 indicates scale of one
